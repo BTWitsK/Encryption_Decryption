@@ -2,19 +2,32 @@ package encryptdecrypt;
 import java.util.*;
 
 public class Main {
-    public static void main(String[] args) {
-        final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-        StringBuilder output = new StringBuilder();
-        Scanner scanner = new Scanner(System.in);
+    final static String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+    static Scanner scanner = new Scanner(System.in);
+    static StringBuilder output = new StringBuilder();
 
+    public static void encryptMessage(String message, int shift) {
+        for (int i = 0; i < message.length(); i++) {
+            output.append((char)(message.charAt(i) + shift));
+        }
+        System.out.println(output);
+    }
+
+    public static void decryptMessage(String message, int shift) {
+        for (int i = 0; i < message.length(); i++) {
+            output.append((char) (message.charAt(i) - shift));
+        }
+        System.out.println(output);
+    }
+
+    public static void main(String[] args) {
+        String operation = scanner.nextLine();
         String message = scanner.nextLine();
         int shift = scanner.nextInt();
 
-        for (int i = 0; i < message.length(); i++) {
-            int letter = ALPHABET.indexOf(message.charAt(i));
-            output.append(Character.isSpaceChar(message.charAt(i)) ? " " : letter + shift > 25 ?
-                    ALPHABET.charAt((shift  + letter) % 26) : ALPHABET.charAt(letter + shift));
+        switch (operation) {
+            case "enc" -> encryptMessage(message, shift);
+            case "dec" -> decryptMessage(message, shift);
         }
-        System.out.println(output);
     }
 }
