@@ -2,9 +2,14 @@ package encryptdecrypt;
 import java.util.*;
 
 public class Main {
-    final static String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-    static Scanner scanner = new Scanner(System.in);
     static StringBuilder output = new StringBuilder();
+    static HashMap<String, String> argMap = new HashMap<>();
+
+    public static void parseArgs(String[] arg) {
+       for (int i = 0; i < arg.length; i += 2) {
+           argMap.put(arg[i], arg[i + 1]);
+       }
+    }
 
     public static void encryptMessage(String message, int shift) {
         for (int i = 0; i < message.length(); i++) {
@@ -21,13 +26,13 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        String operation = scanner.nextLine();
-        String message = scanner.nextLine();
-        int shift = scanner.nextInt();
+        parseArgs(args);
 
-        switch (operation) {
-            case "enc" -> encryptMessage(message, shift);
-            case "dec" -> decryptMessage(message, shift);
+        switch (argMap.getOrDefault("-mode", "enc")) {
+            case "enc" -> encryptMessage(argMap.getOrDefault("-data", ""),
+                    Integer.parseInt(argMap.getOrDefault("-key", "0")));
+            case "dec" -> decryptMessage(argMap.getOrDefault("-data", ""),
+                    Integer.parseInt(argMap.getOrDefault("-key", "0")));
         }
     }
 }
