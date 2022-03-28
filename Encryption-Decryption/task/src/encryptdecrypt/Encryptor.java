@@ -8,24 +8,21 @@ abstract class Encryptor {
         DEC
     }
 
-    StringBuilder output = new StringBuilder();
-    HashMap<String, String> argumentMap = new HashMap<>();
-    Scanner scanner;
-    String message;
-    Mode mode;
-    int shift;
+    protected StringBuilder output = new StringBuilder();
+    protected HashMap<String, String> argumentMap;
+    protected Scanner scanner;
+    protected String message;
+    protected Mode mode;
+    protected int shift;
 
-
-    Encryptor(String[] args) {
-        for (int i = 0; i < args.length; i += 2) {
-            argumentMap.put(args[i], args[i + 1]);
-        }
+    Encryptor(HashMap<String, String> map) {
+        argumentMap = map;
         message = parseMessage();
         shift = Integer.parseInt(argumentMap.getOrDefault("-key", "0"));
         mode = Mode.valueOf(argumentMap.getOrDefault("-mode", "enc").toUpperCase());
     }
 
-    public void printMessage(String output) {
+    protected void printMessage(String output) {
         if (argumentMap.containsKey("-out")) {
             try (PrintWriter writer = new PrintWriter(argumentMap.get("-out"))) {
                 writer.print(output);
@@ -37,7 +34,7 @@ abstract class Encryptor {
         }
     }
 
-    public String parseMessage() {
+    protected String parseMessage() {
         if (argumentMap.containsKey("-data")) {
             return argumentMap.get("-data");
         } else {
@@ -51,19 +48,21 @@ abstract class Encryptor {
         return "";
     }
     
-    abstract void encryptMessage();
+    abstract protected void encryptMessage();
     
-    abstract void decryptMessage();
+    abstract protected void decryptMessage();
+
+    abstract protected void run();
 }
 
 class Shift extends Encryptor {
-    final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+    private final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 
-    public Shift(String[] args) {
+    public Shift(HashMap<String, String> args) {
         super(args);
     }
 
-    public char encryptLetter(char letter) {
+    private char encryptLetter(char letter) {
         if (Character.isSpaceChar(letter)) {
             return ' ';
         } else {
@@ -76,13 +75,13 @@ class Shift extends Encryptor {
         }
     }
 
-    public char decryptLetter(char letter) {
+    private char decryptLetter(char letter) {
         if (Character.isSpaceChar(letter)) {
             return ' ';
         } else {
             int letterIndex = ALPHABET.indexOf(letter);
 
-            char shiftedLetter = letterIndex - shift > 25 ? ALPHABET.charAt((shift - letterIndex) % 26)
+            char shiftedLetter = letterIndex - shift < 0 ? ALPHABET.charAt(26 - Math.abs(letterIndex - shift))
                     : ALPHABET.charAt(letterIndex - shift);
 
             return Character.isLowerCase(letter) ? shiftedLetter : Character.toUpperCase(shiftedLetter);
@@ -90,28 +89,36 @@ class Shift extends Encryptor {
     }
 
     @Override
-    public void encryptMessage() {
+    protected void encryptMessage() {
         for (int i = 0; i < message.length(); i++) {
             output.append(encryptLetter(message.charAt(i)));
         }
         printMessage(output.toString());
     }
 
-    public void decryptMessage() {
+    protected void decryptMessage() {
         for (int i = 0; i < message.length(); i++) {
             output.append(decryptLetter(message.charAt(i)));
         }
         printMessage(output.toString());
     }
+
+    @Override
+    public void run() {
+        switch (mode) {
+            case ENC -> encryptMessage();
+            case DEC -> decryptMessage();
+        }
+    }
 }
 
 class Unicode extends Encryptor {
-    public Unicode(String[] args) {
+    public Unicode(HashMap<String, String> args) {
         super(args);
     }
 
     @Override
-    public void encryptMessage() {
+    protected void encryptMessage() {
         for (int i = 0; i < message.length(); i++) {
             output.append((char)(message.charAt(i) + shift));
         }
@@ -119,10 +126,34 @@ class Unicode extends Encryptor {
     }
 
     @Override
-    public void decryptMessage() {
+    protected void decryptMessage() {
         for (int i = 0; i < message.length(); i++) {
             output.append((char) (message.charAt(i) - shift));
         }
         printMessage(output.toString());
+    }
+
+    @Override
+    public void run() {
+        switch (mode) {
+            case ENC -> encryptMessage();
+            case DEC -> decryptMessage();
+        }
+    }
+}
+
+class EncryptorFactory {
+    public Encryptor encryptorBuilder(String[] args) {
+        HashMap<String, String> map = new HashMap<>();
+
+        for (int i = 0; i < args.length; i += 2) {
+            map.put(args[i], args[i + 1]);
+        }
+
+        return switch(map.getOrDefault("-alg", "shift")) {
+            case "shift" -> new Shift(map);
+            case "unicode" -> new Unicode(map);
+            default -> null;
+        };
     }
 }
